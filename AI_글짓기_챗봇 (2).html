@@ -1,0 +1,1252 @@
+﻿<html lang="ko"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>AI 그림책 글짓기 코치</title>
+<!-- PWA 메타태그 -->
+<meta name="theme-color" content="#7c3aed">
+<meta name="description" content="아이콘을 눌러 그림책 이야기를 만들고 AI와 함께 발전시켜요">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="AI 글짓기">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%237c3aed'/%3E%3Ctext y='.9em' font-size='72' x='12'%3E✏️%3C/text%3E%3C/svg%3E">
+<style>
+:root{
+  --bg:#f0f4ff;
+  --panel:#fff;
+  --accent:#7c3aed;
+  --accent2:#4f46e5;
+  --soft:#ede9fe;
+  --muted:#6b7280;
+  --line:#e5e7eb;
+  --text:#1f2937;
+  --green:#059669;
+  --green-bg:#d1fae5;
+  --shadow:0 8px 32px rgba(79,70,229,.12);
+  --r:20px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{
+  font-family:"Pretendard","Apple SD Gothic Neo","Noto Sans KR",sans-serif;
+  background:var(--bg);min-height:100vh;
+  display:flex;flex-direction:column;align-items:center;padding-bottom:40px;
+}
+
+/* ── 헤더 ── */
+.header{width:100%;max-width:720px;padding:18px 18px 0}
+.header-card{
+  background:linear-gradient(135deg,#7c3aed,#4f46e5 60%,#0ea5e9);
+  border-radius:24px;padding:20px 22px 16px;color:#fff;
+  box-shadow:0 10px 36px rgba(79,70,229,.4);position:relative;overflow:hidden;
+}
+.header-card::before{
+  content:'';position:absolute;top:-50px;right:-50px;
+  width:180px;height:180px;border-radius:50%;background:rgba(255,255,255,.07);
+}
+.header-card::after{
+  content:'';position:absolute;bottom:-30px;left:-30px;
+  width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,.05);
+}
+.header-card h1{font-size:21px;font-weight:800;margin-bottom:3px;position:relative}
+.header-card p{font-size:13px;opacity:.85;position:relative}
+.progress-row{display:flex;align-items:center;gap:10px;margin-top:14px;position:relative}
+.progress-bar{flex:1;height:7px;background:rgba(255,255,255,.25);border-radius:99px;overflow:hidden}
+.progress-fill{height:100%;background:#fff;border-radius:99px;transition:width .5s ease}
+.progress-label{font-size:12px;font-weight:700;white-space:nowrap;opacity:.9}
+
+/* ── 위자드 컨테이너 ── */
+.wizard{width:100%;max-width:720px;padding:16px 18px 0}
+.step-card{
+  background:var(--panel);border-radius:var(--r);
+  box-shadow:var(--shadow);border:1px solid var(--line);
+  overflow:hidden;animation:fadeUp .35s ease;
+}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.step-head{
+  padding:20px 22px 14px;
+  background:linear-gradient(135deg,#f5f3ff,#fff 60%);
+  border-bottom:1px solid #f3f4f6;
+}
+.step-num{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:26px;height:26px;border-radius:50%;
+  background:var(--accent);color:#fff;font-size:12px;font-weight:800;
+  margin-bottom:8px;
+}
+.step-head h2{font-size:19px;margin-bottom:4px}
+.step-head p{font-size:13px;color:var(--muted)}
+.step-body{padding:18px 22px 20px}
+
+/* ── 아이콘 그리드 ── */
+.icon-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(90px,1fr));
+  gap:10px;
+}
+.icon-card{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:6px;padding:14px 8px;
+  border:2px solid var(--line);border-radius:16px;background:#fafbff;
+  cursor:pointer;user-select:none;transition:.18s;
+  min-height:88px;
+}
+.icon-card:hover{border-color:#c4b5fd;background:var(--soft);transform:translateY(-2px)}
+.icon-card.selected{
+  border-color:var(--accent);background:var(--soft);
+  box-shadow:0 0 0 3px rgba(124,58,237,.15);
+}
+.icon-card .ico{font-size:32px;line-height:1}
+.icon-card .lbl{font-size:12px;font-weight:600;color:var(--text);text-align:center;line-height:1.3}
+.icon-card.selected .lbl{color:var(--accent)}
+
+/* 큰 아이콘 (주인공) */
+.icon-grid.big .icon-card{min-height:110px;padding:18px 10px}
+.icon-grid.big .icon-card .ico{font-size:42px}
+.icon-grid.big .icon-card .lbl{font-size:13px}
+
+/* ── 직접 입력 박스 ── */
+.custom-input-wrap{
+  margin-top:12px;border:1.5px dashed #c4b5fd;
+  border-radius:14px;padding:12px 14px;background:#fafbff;
+}
+.custom-input-wrap label{
+  display:block;font-size:12px;font-weight:700;
+  color:var(--accent);margin-bottom:6px;
+}
+.custom-input-wrap input,.custom-input-wrap textarea{
+  width:100%;border:1px solid var(--line);border-radius:10px;
+  padding:10px 12px;font-size:14px;font-family:inherit;
+  color:var(--text);background:#fff;transition:.15s;
+}
+.custom-input-wrap input:focus,.custom-input-wrap textarea:focus{
+  outline:none;border-color:#c4b5fd;
+}
+.custom-input-wrap textarea{min-height:72px;resize:vertical;line-height:1.6}
+
+/* ── 트레이트 칩 ── */
+.trait-chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px}
+.trait-chip{
+  padding:7px 13px;border-radius:999px;border:1.5px solid var(--line);
+  background:#fff;font-size:13px;cursor:pointer;transition:.15s;font-family:inherit;
+}
+.trait-chip.on{background:var(--soft);border-color:#c4b5fd;color:var(--accent);font-weight:600}
+
+/* ── 네비게이션 ── */
+.nav-row{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 22px 18px;gap:10px;
+}
+.btn-nav{
+  padding:12px 24px;border-radius:14px;font-size:14px;font-weight:700;
+  border:none;cursor:pointer;font-family:inherit;transition:.15s;
+}
+.btn-back{background:#f3f4f6;color:var(--muted)}
+.btn-back:hover{background:#e5e7eb}
+.btn-next{
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  color:#fff;box-shadow:0 4px 16px rgba(79,70,229,.3);
+  display:flex;align-items:center;gap:6px;
+}
+.btn-next:hover{opacity:.9}
+.btn-skip{
+  font-size:13px;color:var(--muted);background:none;border:none;
+  cursor:pointer;font-family:inherit;text-decoration:underline;
+}
+
+/* ── 요약 카드 ── */
+.summary-card{
+  width:100%;max-width:720px;padding:0 18px 0;
+  animation:fadeUp .4s ease;
+}
+.summary-inner{
+  background:var(--panel);border-radius:var(--r);
+  box-shadow:var(--shadow);border:1px solid var(--line);overflow:hidden;
+}
+.summary-head{
+  background:linear-gradient(135deg,#7c3aed,#4f46e5);
+  padding:18px 22px;color:#fff;
+}
+.summary-head h2{font-size:18px;margin-bottom:4px}
+.summary-head p{font-size:13px;opacity:.85}
+.summary-body{padding:18px 22px}
+.summary-row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+.stag{
+  display:inline-flex;align-items:center;gap:5px;
+  padding:6px 12px;border-radius:999px;
+  background:var(--soft);border:1px solid #c4b5fd;
+  color:var(--accent);font-size:13px;font-weight:600;
+}
+
+/* ── AI 채팅 ── */
+.ai-section{
+  width:100%;max-width:720px;padding:14px 18px 0;
+}
+.ai-card{
+  background:var(--panel);border-radius:var(--r);
+  box-shadow:var(--shadow);border:1px solid var(--line);overflow:hidden;
+}
+.ai-head{
+  padding:16px 20px;background:linear-gradient(135deg,#f5f3ff,#fff);
+  border-bottom:1px solid var(--line);display:flex;align-items:center;gap:12px;
+}
+.ai-avatar{
+  width:42px;height:42px;border-radius:50%;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  display:flex;align-items:center;justify-content:center;
+  font-size:22px;flex-shrink:0;
+}
+.ai-head-text h3{font-size:16px;margin-bottom:2px}
+.ai-head-text p{font-size:12px;color:var(--muted)}
+
+/* API 연결 */
+.api-section{
+  padding:14px 18px;background:#fafbff;border-bottom:1px solid var(--line);
+}
+.api-tabs{display:flex;gap:0;margin-bottom:10px}
+.api-tab{
+  flex:1;padding:8px 4px;font-size:12px;font-weight:700;
+  background:none;border:1px solid var(--line);cursor:pointer;
+  font-family:inherit;color:var(--muted);transition:.15s;
+}
+.api-tab:first-child{border-radius:10px 0 0 10px}
+.api-tab:last-child{border-radius:0 10px 10px 0}
+.api-tab.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.api-row{display:flex;gap:8px}
+.api-input{
+  flex:1;border:1.5px solid var(--line);border-radius:10px;
+  padding:9px 12px;font-size:13px;font-family:inherit;
+  color:var(--text);background:#fff;transition:.15s;
+}
+.api-input:focus{outline:none;border-color:#c4b5fd}
+.api-connect{
+  padding:9px 16px;border-radius:10px;background:var(--accent);
+  color:#fff;border:none;font-size:13px;font-weight:700;
+  cursor:pointer;font-family:inherit;white-space:nowrap;transition:.15s;
+}
+.api-connect:hover{background:#5b21b6}
+.api-status{
+  font-size:12px;margin-top:6px;padding:6px 10px;border-radius:8px;
+  background:#f3f4f6;color:var(--muted);
+}
+.api-status.ok{background:var(--green-bg);color:var(--green)}
+.api-status.err{background:#fee2e2;color:#dc2626}
+
+/* 외부 연계 버튼 */
+.external-btns{
+  padding:14px 18px;display:flex;gap:8px;flex-wrap:wrap;
+  border-bottom:1px solid var(--line);
+}
+.ext-btn{
+  flex:1;min-width:140px;padding:11px 14px;border-radius:12px;
+  font-size:13px;font-weight:700;cursor:pointer;
+  border:1.5px solid;font-family:inherit;transition:.15s;
+  display:flex;align-items:center;justify-content:center;gap:7px;
+}
+.ext-gpt{background:#10a37f;border-color:#10a37f;color:#fff}
+.ext-gpt:hover{background:#059669}
+.ext-gem{background:#4285f4;border-color:#4285f4;color:#fff}
+.ext-gem:hover{background:#2563eb}
+.ext-copy{background:#fff;border-color:var(--line);color:var(--text)}
+.ext-copy:hover{background:#f3f4f6}
+
+/* 채팅 로그 */
+.chat-log{
+  padding:16px;min-height:200px;max-height:480px;
+  overflow-y:auto;display:flex;flex-direction:column;gap:12px;
+}
+.msg{display:flex;gap:8px;animation:fadeUp .3s ease}
+.msg.bot{align-items:flex-start}
+.msg.user{flex-direction:row-reverse;align-items:flex-start}
+.bubble{
+  max-width:80%;padding:12px 15px;border-radius:18px;
+  font-size:14px;line-height:1.65;
+}
+.bot .bubble{
+  background:#f3f4f6;border-bottom-left-radius:4px;
+}
+.user .bubble{
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  color:#fff;border-bottom-right-radius:4px;
+}
+.msg-avatar{
+  width:32px;height:32px;border-radius:50%;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  font-size:16px;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.1);
+}
+.typing{display:flex;align-items:center;gap:4px;padding:4px 0}
+.dot{width:6px;height:6px;border-radius:50%;background:#9ca3af;
+  animation:bounce .9s infinite ease-in-out}
+.dot:nth-child(2){animation-delay:.18s}
+.dot:nth-child(3){animation-delay:.36s}
+@keyframes bounce{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-6px)}}
+
+/* 채팅 입력 */
+.chat-input-area{
+  padding:12px 14px;border-top:1px solid var(--line);display:flex;gap:8px;
+}
+.chat-input{
+  flex:1;border:1.5px solid var(--line);border-radius:14px;
+  padding:10px 13px;font-size:14px;font-family:inherit;
+  color:var(--text);resize:none;min-height:42px;max-height:100px;
+  line-height:1.5;transition:.15s;
+}
+.chat-input:focus{outline:none;border-color:#c4b5fd}
+.send-btn{
+  width:42px;height:42px;border-radius:12px;
+  background:var(--accent);border:none;cursor:pointer;
+  color:#fff;font-size:18px;flex-shrink:0;transition:.15s;
+  align-self:flex-end;
+}
+.send-btn:hover{background:#5b21b6}
+.send-btn:disabled{background:#c4b5fd;cursor:not-allowed}
+
+/* 빠른 질문 */
+.quick-qs{
+  padding:0 14px 12px;display:flex;flex-wrap:wrap;gap:6px;
+}
+.qq{
+  padding:7px 13px;border-radius:999px;border:1.5px solid #c4b5fd;
+  background:#fff;font-size:12px;font-weight:600;color:var(--accent);
+  cursor:pointer;font-family:inherit;transition:.15s;
+}
+.qq:hover{background:var(--soft)}
+
+/* 프롬프트 결과 */
+.prompt-section{
+  width:100%;max-width:720px;padding:14px 18px 0;
+}
+.prompt-card{
+  background:var(--panel);border-radius:var(--r);
+  box-shadow:var(--shadow);border:1px solid var(--line);overflow:hidden;
+}
+.prompt-tabs{display:flex;border-bottom:1px solid var(--line)}
+.ptab{
+  flex:1;padding:12px 6px;font-size:12px;font-weight:700;
+  background:none;border:none;cursor:pointer;color:var(--muted);
+  font-family:inherit;border-bottom:2.5px solid transparent;transition:.15s;
+}
+.ptab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.prompt-body{padding:14px}
+.prompt-out{
+  width:100%;min-height:180px;border:1px solid var(--line);
+  border-radius:12px;padding:12px;font-size:13px;font-family:inherit;
+  color:var(--text);line-height:1.7;background:#fafbff;resize:vertical;
+}
+.prompt-btns{display:flex;gap:8px;margin-top:10px}
+.pbtn{
+  flex:1;padding:10px;border-radius:11px;font-size:13px;font-weight:700;
+  cursor:pointer;font-family:inherit;border:1.5px solid;transition:.15s;
+}
+.pbtn.p{background:var(--accent);border-color:var(--accent);color:#fff}
+.pbtn.s{background:#fff;border-color:var(--line);color:var(--text)}
+.pbtn.g{background:none;border-color:var(--line);color:var(--muted)}
+
+/* 재시작 */
+.restart-btn{
+  width:calc(100% - 36px);max-width:684px;
+  margin:14px auto 0;display:block;
+  padding:14px;border-radius:var(--r);
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  color:#fff;font-size:15px;font-weight:700;
+  border:none;cursor:pointer;font-family:inherit;
+  box-shadow:0 6px 20px rgba(79,70,229,.35);transition:.15s;
+}
+.restart-btn:hover{opacity:.9}
+.hidden{display:none!important}
+
+@media(max-width:480px){
+  .icon-grid{grid-template-columns:repeat(3,1fr)}
+  .icon-grid.big{grid-template-columns:repeat(3,1fr)}
+  .ext-btn{min-width:0;flex:1}
+}
+</style>
+<link rel="manifest" href="blob:null/d75bed85-6cce-4327-8bc6-6fefba47fb81"><link rel="manifest" href="blob:null/2e053e8e-22e6-4f7a-bc74-8ac595308ec9"></head>
+<body>
+
+<!-- 헤더 -->
+<div class="header">
+  <div class="header-card">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;position:relative">
+      <div>
+        <h1>✏️ AI 그림책 글짓기 코치</h1>
+        <p>아이콘을 눌러 이야기를 만들고 AI와 함께 발전시켜요</p>
+      </div>
+      <button onclick="dlHTML()" style="flex-shrink: 0; background: rgba(255, 255, 255, 0.35); border: 1.5px solid rgba(255, 255, 255, 0.5); color: rgb(255, 255, 255); border-radius: 12px; padding: 8px 13px; font-size: 12px; font-weight: 700; cursor: pointer; font-family: inherit; white-space: nowrap; backdrop-filter: blur(4px); display: flex; align-items: center; gap: 5px; transition: 0.15s;" onmouseover="this.style.background='rgba(255,255,255,.35)'" onmouseout="this.style.background='rgba(255,255,255,.22)'">
+        ⬇️ HTML 저장
+      </button>
+    </div>
+    <div class="progress-row">
+      <div class="progress-bar"><div class="progress-fill" id="pFill" style="width:0%"></div></div>
+      <div class="progress-label" id="pLabel">0 / 8</div>
+    </div>
+  </div>
+</div>
+
+<!-- 앱 설치 안내 배너 (항상 표시) -->
+<div id="appGuideBanner" style="
+  width:100%;max-width:720px;padding:10px 18px 0;
+">
+  <div style="
+    background:#fff;border:1.5px solid #c4b5fd;border-radius:16px;
+    padding:14px 16px;display:flex;align-items:center;gap:12px;
+    box-shadow:0 4px 16px rgba(124,58,237,.1);
+  ">
+    <span style="font-size:28px;flex-shrink:0">📲</span>
+    <div style="flex:1">
+      <div style="font-size:13px;font-weight:800;color:#5b21b6;margin-bottom:3px">패드·폰에서 앱으로 설치하기</div>
+      <div style="font-size:12px;color:#6b7280;line-height:1.5">
+        <strong>① HTML 저장</strong> → 카카오톡으로 전송 →
+        <strong>② 패드에서 Chrome으로 열기</strong> →
+        <strong>③ "앱 설치" 배너 클릭</strong>
+        <span style="color:#9ca3af"> (아이패드는 Safari → 공유버튼 → 홈화면 추가)</span>
+      </div>
+    </div>
+    <button onclick="document.getElementById('appGuideBanner').remove()" style="
+      background:none;border:none;color:#9ca3af;font-size:18px;cursor:pointer;
+      flex-shrink:0;padding:4px;
+    ">✕</button>
+  </div>
+</div>
+
+<!-- 위자드 영역 -->
+<div class="wizard" id="wizardWrap"><div class="step-card">
+    <div class="step-head">
+      <div class="step-num">1</div>
+      <h2>어떤 이야기를 만들까요?</h2>
+      <p>주제를 골라보세요 (여러 개 선택 가능)</p>
+    </div>
+    <div class="step-body"><div class="icon-grid" id="iconGrid" data-mode="multi"><div class="icon-card" data-val="환경·자연" onclick="toggleIcon(this,'multi')">
+        <span class="ico">🌿</span><span class="lbl">환경·자연</span>
+      </div><div class="icon-card" data-val="우정·배려" onclick="toggleIcon(this,'multi')">
+        <span class="ico">🤝</span><span class="lbl">우정·배려</span>
+      </div><div class="icon-card" data-val="가족·사랑" onclick="toggleIcon(this,'multi')">
+        <span class="ico">👨‍👩‍👧</span><span class="lbl">가족·사랑</span>
+      </div><div class="icon-card" data-val="용기·도전" onclick="toggleIcon(this,'multi')">
+        <span class="ico">💪</span><span class="lbl">용기·도전</span>
+      </div><div class="icon-card" data-val="다양성·존중" onclick="toggleIcon(this,'multi')">
+        <span class="ico">🌈</span><span class="lbl">다양성·존중</span>
+      </div><div class="icon-card" data-val="성장·변화" onclick="toggleIcon(this,'multi')">
+        <span class="ico">🌱</span><span class="lbl">성장·변화</span>
+      </div><div class="icon-card" data-val="상상·창의" onclick="toggleIcon(this,'multi')">
+        <span class="ico">🦋</span><span class="lbl">상상·창의</span>
+      </div><div class="icon-card" data-val="일상·감사" onclick="toggleIcon(this,'multi')">
+        <span class="ico">☀️</span><span class="lbl">일상·감사</span>
+      </div><div class="icon-card" data-val="지구 환경" onclick="toggleIcon(this,'multi')">
+        <span class="ico">🌍</span><span class="lbl">지구 환경</span>
+      </div><div class="icon-card" data-val="예술·표현" onclick="toggleIcon(this,'multi')">
+        <span class="ico">🎨</span><span class="lbl">예술·표현</span>
+      </div><div class="icon-card" data-val="나눔·공감" onclick="toggleIcon(this,'multi')">
+        <span class="ico">🤲</span><span class="lbl">나눔·공감</span>
+      </div><div class="icon-card" data-val="신비·판타지" onclick="toggleIcon(this,'multi')">
+        <span class="ico">🔮</span><span class="lbl">신비·판타지</span>
+      </div></div><div class="custom-input-wrap">
+      <label>✏️ 직접 입력 (선택사항)</label>
+      <input id="customVal" type="text" placeholder="목록에 없으면 직접 적어주세요">
+    </div></div>
+    <div class="nav-row">
+      <span></span>
+      <div style="display:flex;align-items:center;gap:12px">
+        <span></span>
+        <button class="btn-nav btn-next" onclick="goNext()">
+          다음 →
+        </button>
+      </div>
+    </div>
+  </div></div>
+
+<!-- 요약 카드 (위자드 완료 후) -->
+<div class="summary-card hidden" id="summaryCard">
+  <div class="summary-inner">
+    <div class="summary-head">
+      <h2>🎉 이야기 기본 틀 완성!</h2>
+      <p>아래에서 AI와 함께 이야기를 발전시켜 보세요</p>
+    </div>
+    <div class="summary-body">
+      <div class="summary-row" id="summaryTags"></div>
+    </div>
+  </div>
+</div>
+
+<!-- AI 채팅 섹션 -->
+<div class="ai-section hidden" id="aiSection">
+  <div class="ai-card">
+    <div class="ai-head">
+      <div class="ai-avatar">🤖</div>
+      <div class="ai-head-text">
+        <h3>AI 이야기 코치</h3>
+        <p>Gemini / ChatGPT와 직접 연결하거나 외부에서 열 수 있어요</p>
+      </div>
+    </div>
+
+    <!-- API 연결 -->
+    <div class="api-section">
+      <div class="api-tabs">
+        <button class="api-tab active" data-api="gemini" onclick="switchApi('gemini')">Gemini (무료)</button>
+        <button class="api-tab" data-api="openai" onclick="switchApi('openai')">ChatGPT</button>
+      </div>
+      <div class="api-row">
+        <input class="api-input" id="apiKeyInput" type="password" placeholder="API 키를 입력하면 여기서 바로 대화할 수 있어요 (선택사항)">
+        <button class="api-connect" onclick="connectApi()">연결</button>
+      </div>
+      <div class="api-status" id="apiStatus">API 키 없이도 아래 버튼으로 ChatGPT / Gemini 웹에서 사용할 수 있어요</div>
+    </div>
+
+    <!-- 외부 연계 버튼 -->
+    <div class="external-btns">
+      <button class="ext-btn ext-gpt" onclick="openChatGPT()">
+        <span>💬</span> ChatGPT에서 열기
+      </button>
+      <button class="ext-btn ext-gem" onclick="openGemini()">
+        <span>✦</span> Gemini에서 열기
+      </button>
+      <button class="ext-btn ext-copy" onclick="copyStoryPrompt()">
+        <span>📋</span> 프롬프트 복사
+      </button>
+    </div>
+
+    <!-- 채팅 로그 -->
+    <div class="chat-log" id="chatLog"></div>
+
+    <!-- 빠른 질문 -->
+    <div class="quick-qs" id="quickQs"></div>
+
+    <!-- 채팅 입력 -->
+    <div class="chat-input-area">
+      <textarea class="chat-input" id="chatInput" rows="1" placeholder="AI 코치에게 질문하거나 아이디어를 이야기해 보세요..." oninput="autoResize(this)" onkeydown="handleChatKey(event)"></textarea>
+      <button class="send-btn" id="sendBtn" onclick="sendChat()" disabled="">➤</button>
+    </div>
+  </div>
+</div>
+
+<!-- 프롬프트 결과 카드 -->
+<div class="prompt-section hidden" id="promptSection">
+  <div class="prompt-card">
+    <div class="prompt-tabs">
+      <button class="ptab active" data-tab="w" onclick="switchPTab('w')">✏️ 글쓰기</button>
+      <button class="ptab" data-tab="s" onclick="switchPTab('s')">📝 장면별</button>
+      <button class="ptab" data-tab="i" onclick="switchPTab('i')">🖼️ 이미지</button>
+    </div>
+    <div class="prompt-body">
+      <textarea class="prompt-out" id="promptOut" readonly=""></textarea>
+      <div class="prompt-btns">
+        <button class="pbtn p" onclick="copyPrompt()">📋 복사</button>
+        <button class="pbtn s" onclick="dlPrompt()">⬇️ 저장</button>
+        <button class="pbtn g" onclick="dlHTML()">🗂️ HTML 저장</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<button class="restart-btn hidden" id="restartBtn" onclick="restart()">↺ 처음부터 다시 만들기</button>
+
+<script>
+// ═══════════════════════════════════════
+// 상태
+// ═══════════════════════════════════════
+const S = {
+  topic:[], setting:'', charType:'', charName:'', charTraits:[],
+  age:'', mood:[], message:'', outline:'',
+  apiMode:'gemini', apiKey:'', apiConnected:false,
+  chatHistory:[], pTab:'w'
+};
+let curStep = 0;
+let stepSelected = []; // 현재 단계 선택값
+
+// ═══════════════════════════════════════
+// 단계 정의
+// ═══════════════════════════════════════
+const STEPS = [
+  {
+    id:'topic', type:'icon-multi', num:1,
+    title:'어떤 이야기를 만들까요?',
+    sub:'주제를 골라보세요 (여러 개 선택 가능)',
+    icons:[
+      {e:'🌿',l:'환경·자연'},{e:'🤝',l:'우정·배려'},{e:'👨‍👩‍👧',l:'가족·사랑'},
+      {e:'💪',l:'용기·도전'},{e:'🌈',l:'다양성·존중'},{e:'🌱',l:'성장·변화'},
+      {e:'🦋',l:'상상·창의'},{e:'☀️',l:'일상·감사'},{e:'🌍',l:'지구 환경'},
+      {e:'🎨',l:'예술·표현'},{e:'🤲',l:'나눔·공감'},{e:'🔮',l:'신비·판타지'},
+    ],
+    customPlaceholder:'목록에 없으면 직접 적어주세요',
+  },
+  {
+    id:'setting', type:'icon-single', num:2,
+    title:'이야기가 펼쳐질 장소는?',
+    sub:'배경을 하나 선택해요',
+    icons:[
+      {e:'🌲',l:'숲·산'},{e:'🌊',l:'바다·강'},{e:'🏙️',l:'도시'},
+      {e:'🌌',l:'우주'},{e:'🏫',l:'학교'},{e:'🏡',l:'마을·집'},
+      {e:'🏰',l:'마법 나라'},{e:'🌸',l:'꽃밭·들판'},{e:'🏔️',l:'산·설원'},
+      {e:'🌆',l:'미래 도시'},{e:'🎪',l:'축제·시장'},{e:'🐠',l:'바닷속'},
+    ],
+    customPlaceholder:'다른 장소가 있다면 적어주세요',
+  },
+  {
+    id:'charType', type:'icon-single-big', num:3,
+    title:'주인공은 누구인가요?',
+    sub:'어떤 존재인지 선택해요',
+    icons:[
+      {e:'👧',l:'여자 어린이'},{e:'👦',l:'남자 어린이'},{e:'🐶',l:'강아지'},
+      {e:'🐱',l:'고양이'},{e:'🐻',l:'곰'},{e:'🦊',l:'여우'},
+      {e:'🧚',l:'요정'},{e:'🤖',l:'로봇'},{e:'🦸',l:'슈퍼히어로'},
+      {e:'🧙',l:'마법사'},{e:'🌱',l:'식물·자연'},{e:'🐉',l:'용·신화생물'},
+    ],
+    customPlaceholder:'다른 주인공이 있다면 적어주세요',
+  },
+  {
+    id:'charName', type:'text', num:4,
+    title:'주인공의 이름과 특징을 알려주세요',
+    sub:'이름과 어떤 성격인지 자유롭게 적어주세요',
+    placeholder:'예: 하늘이, 환경을 사랑하는 초등학생\n예: 콩이, 호기심 많고 겁이 없는 강아지',
+    traits:['용감한','호기심 많은','소심하지만 따뜻한','엉뚱한','착하고 배려심 있는','고집 센','씩씩한','수줍음 많은'],
+  },
+  {
+    id:'age', type:'icon-single', num:5,
+    title:'이 책은 누가 읽을까요?',
+    sub:'대상 연령을 선택해요',
+    icons:[
+      {e:'🐣',l:'3~5세'},{e:'🐥',l:'5~7세'},
+      {e:'📗',l:'초등 저학년'},{e:'📘',l:'초등 고학년'},{e:'👥',l:'전 연령'},
+    ],
+  },
+  {
+    id:'mood', type:'icon-multi', num:6,
+    title:'어떤 느낌의 이야기인가요?',
+    sub:'분위기를 골라보세요 (여러 개 가능)',
+    icons:[
+      {e:'🌸',l:'따뜻하고 포근한'},{e:'✨',l:'신비롭고 환상적'},{e:'😄',l:'유쾌하고 재미있는'},
+      {e:'🍃',l:'잔잔하고 서정적'},{e:'🗺️',l:'모험적이고 설레는'},{e:'💧',l:'감동적이고 울림 있는'},
+    ],
+  },
+  {
+    id:'message', type:'text-skip', num:7,
+    title:'독자에게 전달하고 싶은 메시지는?',
+    sub:'책을 읽고 나서 어떤 마음이 들었으면 좋겠나요?',
+    placeholder:'예: 작은 행동 하나가 지구를 바꿀 수 있어요\n예: 서로 달라도 함께할 수 있어요',
+    skip:'AI와 함께 정하기',
+  },
+  {
+    id:'outline', type:'text-skip', num:8,
+    title:'이야기 아이디어를 떠올려 보세요',
+    sub:'생각이 없으면 건너뛰어도 괜찮아요! AI가 도와줄게요',
+    placeholder:'예: 숲에 살던 여우가 쓰레기 때문에 집을 잃고, 어린 소녀와 함께 해결책을 찾아가는 이야기',
+    skip:'AI와 함께 만들기',
+  },
+];
+const TOTAL = STEPS.length;
+
+// ═══════════════════════════════════════
+// 렌더링
+// ═══════════════════════════════════════
+const wizardWrap = document.getElementById('wizardWrap');
+
+function renderStep(){
+  if(curStep >= TOTAL){ showResult(); return; }
+  const s = STEPS[curStep];
+  stepSelected = [];
+  updateProgress();
+
+  let body = '';
+  if(s.type==='icon-single' || s.type==='icon-multi'){
+    const cls = s.type==='icon-multi' ? 'multi' : 'single';
+    body = `<div class="icon-grid" id="iconGrid" data-mode="${cls}">` +
+      s.icons.map(ic=>`<div class="icon-card" data-val="${ic.l}" onclick="toggleIcon(this,'${cls}')">
+        <span class="ico">${ic.e}</span><span class="lbl">${ic.l}</span>
+      </div>`).join('') + `</div>`;
+    if(s.customPlaceholder) body += `<div class="custom-input-wrap">
+      <label>✏️ 직접 입력 (선택사항)</label>
+      <input id="customVal" type="text" placeholder="${s.customPlaceholder}" />
+    </div>`;
+  } else if(s.type==='icon-single-big'){
+    body = `<div class="icon-grid big" id="iconGrid" data-mode="single">` +
+      s.icons.map(ic=>`<div class="icon-card" data-val="${ic.l}" onclick="toggleIcon(this,'single')">
+        <span class="ico">${ic.e}</span><span class="lbl">${ic.l}</span>
+      </div>`).join('') + `</div>`;
+    if(s.customPlaceholder) body += `<div class="custom-input-wrap">
+      <label>✏️ 직접 입력 (선택사항)</label>
+      <input id="customVal" type="text" placeholder="${s.customPlaceholder}" />
+    </div>`;
+  } else if(s.type==='text'){
+    body = `<div class="custom-input-wrap" style="border:none;padding:0;background:transparent">
+      <textarea id="textVal" placeholder="${s.placeholder||''}" style="border:1.5px solid var(--line);border-radius:14px"></textarea>
+    </div>`;
+    if(s.traits) body += `<div class="trait-chips">` +
+      s.traits.map(t=>`<button class="trait-chip" onclick="toggleTrait(this,'${t}')">${t}</button>`).join('') +
+      `</div><p style="font-size:12px;color:var(--muted);margin-top:8px">위 특징을 클릭하면 자동으로 추가돼요</p>`;
+  } else if(s.type==='text-skip'){
+    body = `<div class="custom-input-wrap" style="border:none;padding:0;background:transparent">
+      <textarea id="textVal" placeholder="${s.placeholder||''}" style="border:1.5px solid var(--line);border-radius:14px"></textarea>
+    </div>`;
+  }
+
+  const skipBtn = (s.type==='text-skip' || s.skip)
+    ? `<button class="btn-skip" onclick="skipCurrent()">${s.skip||'건너뛰기'} →</button>`
+    : `<span></span>`;
+
+  wizardWrap.innerHTML = `<div class="step-card">
+    <div class="step-head">
+      <div class="step-num">${s.num}</div>
+      <h2>${s.title}</h2>
+      ${s.sub ? `<p>${s.sub}</p>` : ''}
+    </div>
+    <div class="step-body">${body}</div>
+    <div class="nav-row">
+      ${curStep>0 ? `<button class="btn-nav btn-back" onclick="goBack()">← 이전</button>` : `<span></span>`}
+      <div style="display:flex;align-items:center;gap:12px">
+        ${skipBtn}
+        <button class="btn-nav btn-next" onclick="goNext()">
+          ${curStep===TOTAL-1 ? '완성! 🎉' : '다음 →'}
+        </button>
+      </div>
+    </div>
+  </div>`;
+
+  // 텍스트 영역 자동 리사이즈
+  const tv = document.getElementById('textVal');
+  if(tv) tv.addEventListener('input', ()=>autoResize(tv));
+}
+
+function toggleIcon(el, mode){
+  if(mode==='single'){
+    document.querySelectorAll('.icon-card').forEach(c=>c.classList.remove('selected'));
+    el.classList.add('selected');
+    stepSelected = [el.dataset.val];
+  } else {
+    el.classList.toggle('selected');
+    const v = el.dataset.val;
+    if(el.classList.contains('selected')) stepSelected.push(v);
+    else stepSelected = stepSelected.filter(x=>x!==v);
+  }
+}
+
+function toggleTrait(btn, trait){
+  btn.classList.toggle('on');
+  const tv = document.getElementById('textVal');
+  if(!tv) return;
+  if(btn.classList.contains('on')){
+    tv.value = tv.value ? tv.value + ', ' + trait : trait;
+  } else {
+    tv.value = tv.value.replace(', '+trait,'').replace(trait+', ','').replace(trait,'');
+  }
+}
+
+// ═══════════════════════════════════════
+// 네비게이션
+// ═══════════════════════════════════════
+function goNext(){
+  saveStep();
+  curStep++;
+  renderStep();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function goBack(){
+  curStep--;
+  renderStep();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function skipCurrent(){
+  curStep++;
+  renderStep();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function saveStep(){
+  const s = STEPS[curStep];
+  const cv = document.getElementById('customVal');
+  const tv = document.getElementById('textVal');
+
+  if(s.type==='icon-single' || s.type==='icon-single-big'){
+    const custom = cv ? cv.value.trim() : '';
+    const val = custom || (stepSelected[0]||'');
+    if(s.id==='setting') S.setting = val;
+    else if(s.id==='charType') S.charType = val;
+    else if(s.id==='age') S.age = val;
+  } else if(s.type==='icon-multi'){
+    const custom = cv ? cv.value.trim() : '';
+    const vals = [...stepSelected, ...(custom ? custom.split(',').map(v=>v.trim()).filter(Boolean) : [])];
+    if(s.id==='topic') S.topic = vals;
+    else if(s.id==='mood') S.mood = vals;
+  } else if(s.type==='text'){
+    const val = tv ? tv.value.trim() : '';
+    if(s.id==='charName'){ S.charName = val; }
+  } else if(s.type==='text-skip'){
+    const val = tv ? tv.value.trim() : '';
+    if(s.id==='message') S.message = val;
+    else if(s.id==='outline') S.outline = val;
+  }
+}
+
+function updateProgress(){
+  const pct = Math.round((curStep/TOTAL)*100);
+  document.getElementById('pFill').style.width = pct+'%';
+  document.getElementById('pLabel').textContent = curStep+' / '+TOTAL;
+}
+
+// ═══════════════════════════════════════
+// 완료 화면
+// ═══════════════════════════════════════
+function showResult(){
+  wizardWrap.innerHTML='';
+  updateProgress();
+  document.getElementById('pLabel').textContent = '완성! 🎉';
+  document.getElementById('pFill').style.width='100%';
+
+  // 요약 태그
+  const tags = document.getElementById('summaryTags');
+  const items = [
+    ...S.topic.slice(0,2), S.setting, S.charType,
+    S.charName.split('\n')[0].split(',')[0],
+    ...S.mood.slice(0,1), S.age,
+  ].filter(Boolean);
+  tags.innerHTML = items.map(t=>`<span class="stag">${t}</span>`).join('');
+
+  document.getElementById('summaryCard').classList.remove('hidden');
+  document.getElementById('aiSection').classList.remove('hidden');
+  document.getElementById('promptSection').classList.remove('hidden');
+  document.getElementById('restartBtn').classList.remove('hidden');
+
+  switchPTab('w');
+  initChat();
+  renderQuickQs();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+// ═══════════════════════════════════════
+// 프롬프트 빌더
+// ═══════════════════════════════════════
+function storyContext(){
+  let ctx = '';
+  if(S.topic.length) ctx += `주제: ${S.topic.join(', ')}\n`;
+  if(S.setting) ctx += `배경: ${S.setting}\n`;
+  if(S.charType||S.charName) ctx += `주인공: ${[S.charType,S.charName].filter(Boolean).join(' / ')}\n`;
+  if(S.age) ctx += `대상: ${S.age}\n`;
+  if(S.mood.length) ctx += `분위기: ${S.mood.join(', ')}\n`;
+  if(S.message) ctx += `메시지: ${S.message}\n`;
+  if(S.outline) ctx += `이야기 아이디어: ${S.outline}\n`;
+  return ctx;
+}
+
+function buildWriting(){
+  let p = `당신은 그림책 작가입니다. 아래 조건에 맞는 그림책 글을 써주세요.\n\n`;
+  p += storyContext();
+  p += `\n【출력 형식】\n- 각 장면을 페이지 단위로 구분\n- 페이지마다 2~4줄의 리듬감 있는 문장\n- 독자 연령에 맞는 쉬운 어휘\n- 마지막 페이지에 전달 메시지가 자연스럽게 담기도록`;
+  return p;
+}
+
+function buildScene(){
+  let p = `아래 이야기를 24쪽 그림책 장면 텍스트로 써주세요.\n\n`;
+  p += storyContext();
+  p += `\n각 장면:\n【장면 1: 시작】 주인공 소개, 배경 설명\n【장면 2: 전개】 사건 발생, 문제 등장\n【장면 3: 절정】 해결 시도\n【장면 4: 결말】 해결, 메시지 전달\n\n각 장면을 2~3페이지 분량으로 써주세요.`;
+  return p;
+}
+
+function buildImage(){
+  const style = '수채화 스타일, 따뜻한 색감';
+  const char = S.charName.split('\n')[0] || S.charType || 'a child';
+  const mood = S.mood[0]||'warm and heartwarming';
+  let p = `그림책 일러스트 AI 프롬프트\n\n`;
+  p += storyContext();
+  p += `\n【영문 이미지 프롬프트 (DALL-E / Midjourney)】\n`;
+  p += `"${char} in a ${S.setting||'magical forest'}, ${mood.replace('따뜻하고 포근한','warm and cozy').replace('신비롭고 환상적','mysterious and magical').replace('유쾌하고 재미있는','playful and fun').replace('잔잔하고 서정적','calm and lyrical').replace('모험적이고 설레는','adventurous').replace('감동적이고 울림 있는','heartwarming')}, watercolor children's book illustration, soft pastel tones, high quality, gentle lighting"`;
+  return p;
+}
+
+const ptBuilders = {w:buildWriting, s:buildScene, i:buildImage};
+
+function switchPTab(t){
+  S.pTab = t;
+  document.querySelectorAll('.ptab').forEach(b=>b.classList.toggle('active',b.dataset.tab===t));
+  document.getElementById('promptOut').value = ptBuilders[t]();
+}
+
+function copyPrompt(){
+  const el = document.getElementById('promptOut');
+  el.select(); document.execCommand('copy');
+  const btn = document.querySelector('.pbtn.p');
+  btn.textContent='✅ 복사됨!';
+  setTimeout(()=>btn.textContent='📋 복사',1500);
+}
+function dlPrompt(){
+  const n={w:'글쓰기',s:'장면별',i:'이미지'}[S.pTab];
+  const b=new Blob([document.getElementById('promptOut').value],{type:'text/plain;charset=utf-8'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=`AI그림책_${n}.txt`;a.click();
+}
+function dlHTML(){
+  const b=new Blob(['\uFEFF'+document.documentElement.outerHTML],{type:'text/html;charset=utf-8'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='AI_글짓기_챗봇.html';a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+// ═══════════════════════════════════════
+// 외부 연계
+// ═══════════════════════════════════════
+function buildStoryPromptForAI(){
+  return `나는 어린이 그림책을 만들고 있어. 아래 설정을 바탕으로 이야기를 함께 발전시켜 줘.\n\n${storyContext()}\n이야기를 어떻게 시작하면 좋을지, 재미있는 사건은 무엇이 좋을지, 감동적인 결말은 어떻게 짜면 좋을지 제안해 줘. 한국어로 답해줘.`;
+}
+
+function openChatGPT(){
+  const prompt = buildStoryPromptForAI();
+  navigator.clipboard.writeText(prompt).then(()=>{
+    alert('✅ 프롬프트가 복사되었습니다!\n\nChatGPT가 열리면 붙여넣기(Ctrl+V 또는 길게 눌러 붙여넣기)로 시작하세요.');
+    window.open('https://chatgpt.com/', '_blank');
+  }).catch(()=>{
+    window.open('https://chatgpt.com/', '_blank');
+  });
+}
+
+function openGemini(){
+  const prompt = buildStoryPromptForAI();
+  navigator.clipboard.writeText(prompt).then(()=>{
+    alert('✅ 프롬프트가 복사되었습니다!\n\nGemini가 열리면 붙여넣기(Ctrl+V 또는 길게 눌러 붙여넣기)로 시작하세요.');
+    window.open('https://gemini.google.com/app', '_blank');
+  }).catch(()=>{
+    window.open('https://gemini.google.com/app', '_blank');
+  });
+}
+
+function copyStoryPrompt(){
+  const prompt = buildStoryPromptForAI();
+  navigator.clipboard.writeText(prompt).then(()=>{
+    const btn = document.querySelector('.ext-copy');
+    btn.innerHTML='<span>✅</span> 복사됨!';
+    setTimeout(()=>btn.innerHTML='<span>📋</span> 프롬프트 복사',1500);
+  });
+}
+
+// ═══════════════════════════════════════
+// API 연결
+// ═══════════════════════════════════════
+let currentApi = 'gemini';
+
+function switchApi(mode){
+  currentApi = mode;
+  document.querySelectorAll('.api-tab').forEach(b=>b.classList.toggle('active',b.dataset.api===mode));
+  document.getElementById('apiKeyInput').placeholder = mode==='gemini'
+    ? 'Gemini API 키 입력 (aistudio.google.com에서 무료 발급)'
+    : 'OpenAI API 키 입력 (sk-...)';
+}
+
+async function connectApi(){
+  const key = document.getElementById('apiKeyInput').value.trim();
+  const statusEl = document.getElementById('apiStatus');
+  if(!key){ statusEl.textContent='API 키를 입력해주세요'; statusEl.className='api-status err'; return; }
+
+  statusEl.textContent='연결 확인 중...'; statusEl.className='api-status';
+  S.apiKey = key; S.apiMode = currentApi;
+
+  // 테스트 요청
+  try{
+    const ok = await testApi(key, currentApi);
+    if(ok){
+      S.apiConnected = true;
+      statusEl.textContent = `✅ ${currentApi==='gemini'?'Gemini':'ChatGPT'} 연결 성공! 아래 채팅창에서 바로 대화할 수 있어요`;
+      statusEl.className = 'api-status ok';
+      document.getElementById('sendBtn').disabled = false;
+      addBotMsg('🎉 연결됐어요! 이야기에 대해 무엇이든 물어보세요.\n\n예시 질문:\n- "주인공을 더 재미있게 만들어줘"\n- "이야기 시작 부분을 써줘"\n- "흥미로운 사건을 제안해줘"');
+    }
+  } catch(e){
+    statusEl.textContent = '❌ 연결 실패: API 키를 확인해주세요';
+    statusEl.className = 'api-status err';
+  }
+}
+
+async function testApi(key, mode){
+  if(mode==='gemini'){
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`,{
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({contents:[{parts:[{text:'안녕'}]}]})
+    });
+    if(!res.ok) throw new Error();
+    return true;
+  } else {
+    const res = await fetch('https://api.openai.com/v1/chat/completions',{
+      method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
+      body:JSON.stringify({model:'gpt-4o-mini',messages:[{role:'user',content:'안녕'}],max_tokens:10})
+    });
+    if(!res.ok) throw new Error();
+    return true;
+  }
+}
+
+// ═══════════════════════════════════════
+// AI 채팅
+// ═══════════════════════════════════════
+const chatLog = document.getElementById('chatLog');
+
+function initChat(){
+  S.chatHistory = [];
+  const sysPrompt = `당신은 친절하고 창의적인 그림책 이야기 코치입니다.\n아래는 사용자가 설정한 그림책 기본 정보입니다:\n${storyContext()}\n이 정보를 바탕으로 사용자와 대화하며 이야기를 함께 발전시켜 주세요.\n- 짧고 명확하게 답해주세요 (3~5문장)\n- 구체적인 이야기 아이디어나 문장을 제안해주세요\n- 따뜻하고 격려하는 톤으로 대화해주세요\n- 어린이 그림책에 적합한 내용으로 안내해주세요`;
+  S.sysPrompt = sysPrompt;
+
+  addBotMsg(`안녕하세요! 🎨 이야기 기본 틀을 잘 잡으셨어요!\n\n저는 AI 이야기 코치예요. 아래 방법 중 하나로 시작할 수 있어요:\n\n💬 **API 연결**: 위에서 Gemini(무료) 또는 ChatGPT API 키를 입력하면 여기서 바로 대화해요\n\n🔗 **외부 연계**: 위 버튼으로 ChatGPT/Gemini 웹을 열고, 자동 복사된 프롬프트를 붙여넣기하면 바로 시작돼요`);
+}
+
+function addBotMsg(text){
+  const div = document.createElement('div');
+  div.className='msg bot';
+  div.innerHTML=`<div class="msg-avatar">🤖</div><div class="bubble">${text.replace(/\n/g,'<br>').replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')}</div>`;
+  chatLog.appendChild(div);
+  chatLog.scrollTop=chatLog.scrollHeight;
+}
+
+function addUserMsg(text){
+  const div = document.createElement('div');
+  div.className='msg user';
+  div.innerHTML=`<div class="bubble">${text.replace(/\n/g,'<br>')}</div><div class="msg-avatar">😊</div>`;
+  chatLog.appendChild(div);
+  chatLog.scrollTop=chatLog.scrollHeight;
+}
+
+function showTyping(){
+  const div = document.createElement('div');
+  div.className='msg bot'; div.id='typingIndicator';
+  div.innerHTML=`<div class="msg-avatar">🤖</div><div class="bubble"><div class="typing"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div></div>`;
+  chatLog.appendChild(div); chatLog.scrollTop=chatLog.scrollHeight;
+  return div;
+}
+
+async function sendChat(){
+  const input = document.getElementById('chatInput');
+  const msg = input.value.trim();
+  if(!msg || !S.apiConnected) return;
+  input.value=''; autoResize(input);
+
+  addUserMsg(msg);
+  S.chatHistory.push({role:'user', content:msg});
+
+  const typing = showTyping();
+  document.getElementById('sendBtn').disabled=true;
+
+  try{
+    let reply;
+    if(S.apiMode==='gemini') reply = await callGemini(msg);
+    else reply = await callOpenAI(msg);
+    typing.remove();
+    S.chatHistory.push({role:'assistant', content:reply});
+    addBotMsg(reply);
+    renderQuickQs();
+  } catch(e){
+    typing.remove();
+    addBotMsg('⚠️ 오류가 발생했어요. API 키를 확인하거나 잠시 후 다시 시도해주세요.');
+  } finally {
+    document.getElementById('sendBtn').disabled=false;
+  }
+}
+
+async function callGemini(msg){
+  const contents = [];
+  // 시스템 프롬프트를 첫 메시지로
+  if(S.chatHistory.length===1){
+    contents.push({role:'user',parts:[{text:S.sysPrompt+'\n\n사용자: '+msg}]});
+  } else {
+    S.chatHistory.forEach(h=>{
+      contents.push({role:h.role==='user'?'user':'model', parts:[{text:h.content}]});
+    });
+  }
+  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${S.apiKey}`,{
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({contents, generationConfig:{maxOutputTokens:800, temperature:0.8}})
+  });
+  if(!res.ok) throw new Error();
+  const data = await res.json();
+  return data.candidates[0].content.parts[0].text;
+}
+
+async function callOpenAI(msg){
+  const messages = [{role:'system', content:S.sysPrompt}];
+  S.chatHistory.forEach(h=>messages.push({role:h.role, content:h.content}));
+  const res = await fetch('https://api.openai.com/v1/chat/completions',{
+    method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+S.apiKey},
+    body:JSON.stringify({model:'gpt-4o-mini', messages, max_tokens:800, temperature:0.8})
+  });
+  if(!res.ok) throw new Error();
+  const data = await res.json();
+  return data.choices[0].message.content;
+}
+
+function handleChatKey(e){
+  if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendChat();}
+}
+
+// ── 빠른 질문 ──
+const QUICK_QS = [
+  '이야기 시작 부분을 써줘','흥미로운 사건을 제안해줘',
+  '주인공을 더 재미있게 만들어줘','감동적인 결말을 써줘',
+  '대화 문장을 만들어줘','이야기를 더 짧게 정리해줘',
+];
+
+function renderQuickQs(){
+  const wrap = document.getElementById('quickQs');
+  if(!S.apiConnected){ wrap.innerHTML=''; return; }
+  wrap.innerHTML = QUICK_QS.map(q=>`<button class="qq" onclick="sendQuick('${q}')">${q}</button>`).join('');
+}
+
+function sendQuick(q){
+  document.getElementById('chatInput').value=q;
+  sendChat();
+}
+
+// ═══════════════════════════════════════
+// 유틸
+// ═══════════════════════════════════════
+function autoResize(el){
+  el.style.height='auto';
+  el.style.height=Math.min(el.scrollHeight,120)+'px';
+}
+
+function restart(){
+  if(!confirm('처음부터 다시 시작할까요?')) return;
+  Object.keys(S).forEach(k=>{ if(Array.isArray(S[k])) S[k]=[]; else if(typeof S[k]==='boolean') S[k]=false; else S[k]=''; });
+  S.pTab='w'; S.apiMode='gemini';
+  curStep=0; stepSelected=[];
+  document.getElementById('summaryCard').classList.add('hidden');
+  document.getElementById('aiSection').classList.add('hidden');
+  document.getElementById('promptSection').classList.add('hidden');
+  document.getElementById('restartBtn').classList.add('hidden');
+  document.getElementById('chatLog').innerHTML='';
+  renderStep();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+// ═══════════════════════════════════════
+// PWA 설치 & 서비스워커
+// ═══════════════════════════════════════
+let deferredInstallPrompt = null;
+
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredInstallPrompt = e;
+  showInstallBanner();
+});
+
+function showInstallBanner(){
+  if(document.getElementById('installBanner')) return;
+  const banner = document.createElement('div');
+  banner.id = 'installBanner';
+  banner.style.cssText = `
+    position:fixed;bottom:16px;left:50%;transform:translateX(-50%);
+    background:linear-gradient(135deg,#7c3aed,#4f46e5);
+    color:#fff;padding:14px 20px;border-radius:18px;
+    display:flex;align-items:center;gap:12px;
+    box-shadow:0 8px 28px rgba(79,70,229,.45);
+    z-index:9999;max-width:360px;width:calc(100% - 32px);
+    animation:fadeUp .4s ease;
+  `;
+  banner.innerHTML = `
+    <span style="font-size:26px;flex-shrink:0">📲</span>
+    <div style="flex:1">
+      <div style="font-size:14px;font-weight:800;margin-bottom:2px">앱으로 설치하기</div>
+      <div style="font-size:12px;opacity:.85">홈 화면에 추가하면 앱처럼 사용할 수 있어요</div>
+    </div>
+    <button onclick="installApp()" style="
+      background:#fff;color:#7c3aed;border:none;border-radius:10px;
+      padding:8px 14px;font-size:13px;font-weight:800;cursor:pointer;
+      font-family:inherit;flex-shrink:0;
+    ">설치</button>
+    <button onclick="document.getElementById('installBanner').remove()" style="
+      background:rgba(255,255,255,.2);border:none;color:#fff;
+      border-radius:8px;padding:6px 8px;cursor:pointer;font-size:14px;
+    ">✕</button>
+  `;
+  document.body.appendChild(banner);
+}
+
+async function installApp(){
+  if(!deferredInstallPrompt) return;
+  deferredInstallPrompt.prompt();
+  const { outcome } = await deferredInstallPrompt.userChoice;
+  if(outcome === 'accepted'){
+    document.getElementById('installBanner')?.remove();
+  }
+  deferredInstallPrompt = null;
+}
+
+// iOS 감지 → 수동 안내
+const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+const isInStandalone = window.matchMedia('(display-mode: standalone)').matches;
+if(isIOS && !isInStandalone){
+  window.addEventListener('load', ()=>{
+    setTimeout(()=>{
+      if(document.getElementById('installBanner')) return;
+      const tip = document.createElement('div');
+      tip.id = 'installBanner';
+      tip.style.cssText = `
+        position:fixed;bottom:16px;left:50%;transform:translateX(-50%);
+        background:linear-gradient(135deg,#7c3aed,#4f46e5);
+        color:#fff;padding:14px 18px;border-radius:18px;
+        display:flex;align-items:center;gap:10px;
+        box-shadow:0 8px 28px rgba(79,70,229,.45);
+        z-index:9999;max-width:360px;width:calc(100% - 32px);
+        animation:fadeUp .4s ease;
+      `;
+      tip.innerHTML = `
+        <span style="font-size:24px;flex-shrink:0">📲</span>
+        <div style="flex:1;font-size:13px;line-height:1.5">
+          <strong>아이패드에서 앱으로 설치</strong><br>
+          Safari 하단 <strong>공유 버튼(□↑)</strong> →<br><strong>홈 화면에 추가</strong>를 눌러주세요
+        </div>
+        <button onclick="this.parentElement.remove()" style="
+          background:rgba(255,255,255,.2);border:none;color:#fff;
+          border-radius:8px;padding:6px 8px;cursor:pointer;font-size:14px;
+        ">✕</button>
+      `;
+      document.body.appendChild(tip);
+    }, 3000);
+  });
+}
+
+// 서비스워커 (오프라인 캐시)
+if('serviceWorker' in navigator){
+  const swCode = `
+const CACHE = 'ai-writing-v1';
+const ASSETS = ['/'];
+self.addEventListener('install', e => {
+  e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)));
+  self.skipWaiting();
+});
+self.addEventListener('activate', e => {
+  e.waitUntil(caches.keys().then(keys =>
+    Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))
+  ));
+  self.clients.claim();
+});
+self.addEventListener('fetch', e => {
+  e.respondWith(
+    caches.match(e.request).then(cached => cached || fetch(e.request).catch(() => cached))
+  );
+});
+  `;
+  const swBlob = new Blob([swCode], {type:'application/javascript'});
+  const swUrl = URL.createObjectURL(swBlob);
+  navigator.serviceWorker.register(swUrl).catch(()=>{});
+}
+
+// manifest 동적 주입
+const manifest = {
+  name: 'AI 그림책 글짓기 코치',
+  short_name: 'AI 글짓기',
+  description: '아이콘을 눌러 그림책 이야기를 만들고 AI와 함께 발전시켜요',
+  start_url: './',
+  display: 'standalone',
+  background_color: '#f0f4ff',
+  theme_color: '#7c3aed',
+  orientation: 'portrait',
+  icons: [{
+    src: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%237c3aed'/%3E%3Ctext y='.9em' font-size='72' x='12'%3E%E2%9C%8F%EF%B8%8F%3C/text%3E%3C/svg%3E",
+    sizes: '192x192', type: 'image/svg+xml'
+  }]
+};
+const mBlob = new Blob([JSON.stringify(manifest)], {type:'application/json'});
+const mUrl = URL.createObjectURL(mBlob);
+const mLink = document.createElement('link');
+mLink.rel='manifest'; mLink.href=mUrl;
+document.head.appendChild(mLink);
+
+// ═══════════════════════════════════════
+// 시작
+// ═══════════════════════════════════════
+renderStep();
+</script>
+
+
+</body></html>
