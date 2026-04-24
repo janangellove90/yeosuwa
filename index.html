@@ -118,6 +118,22 @@
         @media (max-width: 1024px) {
             .dashboard-grid {
                 grid-template-columns: 1fr;
+                flex-grow: 0;       /* 뷰포트 높이 강제 분할 해제 */
+                align-items: start; /* 패널이 내용 크기만큼만 늘어나도록 */
+            }
+            .five-senses {
+                grid-template-columns: 1fr; /* 오감 입력칸 1열로 */
+                gap: 8px;
+            }
+            .sense-input {
+                padding: 8px 10px;
+                font-size: 0.9rem;
+            }
+            .sense-item label {
+                font-size: 0.85rem;
+            }
+            .panel-header h2 {
+                font-size: 1.3rem;
             }
         }
 
@@ -132,7 +148,8 @@
             flex-direction: column;
             gap: 20px;
             position: relative;
-            overflow: hidden;
+            overflow: visible;   /* 내용 잘림 방지 */
+            overflow-x: clip;    /* 좌우 장식 요소는 유지 */
             animation: slideUp 0.5s ease-out forwards;
         }
 
