@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>여순사건 그림 선택 대시보드</title>
+<style>
+  :root{
+    --camellia:#b3293f;
+    --camellia-dark:#8a1f30;
+    --leaf:#4c6b4f;
+    --cream:#fdf8f0;
+    --ink:#2e2a26;
+    --line:#e3d9c9;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+    background:var(--cream);
+    color:var(--ink);
+    padding:24px;
+  }
+  .wrap{max-width:880px;margin:0 auto;}
+  h1{font-size:22px;margin:0 0 4px;color:var(--camellia-dark);}
+  .sub{font-size:13px;color:#7a7268;margin:0 0 18px;}
+  .guide{
+    background:#fff;
+    border:1px solid var(--line);
+    border-left:4px solid var(--camellia);
+    padding:12px 14px;
+    border-radius:6px;
+    font-size:13px;
+    line-height:1.6;
+    margin-bottom:20px;
+  }
+  .grid{
+    display:grid;
+    grid-template-columns:repeat(3, 1fr);
+    gap:14px;
+    margin-bottom:18px;
+  }
+  @media (max-width:760px){ .grid{grid-template-columns:1fr 1fr;} }
+  @media (max-width:480px){ .grid{grid-template-columns:1fr;} }
+  .field{
+    background:#fff;
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:12px 14px;
+  }
+  .field label{
+    display:block;
+    font-size:13px;
+    font-weight:600;
+    margin-bottom:6px;
+    color:var(--camellia-dark);
+  }
+  select{
+    width:100%;
+    padding:8px 10px;
+    border:1px solid var(--line);
+    border-radius:6px;
+    font-size:14px;
+    background:#fffdf9;
+    color:var(--ink);
+  }
+  .btnrow{display:flex;gap:10px;margin-bottom:22px;flex-wrap:wrap;}
+  button{
+    border:none;
+    border-radius:6px;
+    padding:10px 16px;
+    font-size:14px;
+    cursor:pointer;
+    font-weight:600;
+  }
+  .primary{background:var(--camellia);color:#fff;}
+  .primary:hover{background:var(--camellia-dark);}
+  .secondary{background:var(--leaf);color:#fff;}
+  .secondary:hover{background:#3a5440;}
+  .ghost{background:#fff;border:1px solid var(--line);color:var(--ink);}
+  #results{display:flex;flex-direction:column;gap:14px;}
+  .card{
+    background:#fff;
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:14px 16px;
+    position:relative;
+  }
+  .card .tag{
+    display:inline-block;
+    font-size:12px;
+    background:#f3e9dd;
+    color:var(--camellia-dark);
+    padding:2px 8px;
+    border-radius:10px;
+    margin-bottom:8px;
+  }
+  .card .note{font-size:13px;color:#555;margin-bottom:8px;}
+  .card textarea{
+    width:100%;
+    min-height:90px;
+    font-size:13px;
+    font-family:ui-monospace,Consolas,monospace;
+    border:1px solid var(--line);
+    border-radius:6px;
+    padding:8px;
+    resize:vertical;
+    background:#fbf6ee;
+  }
+  .copybtn{
+    margin-top:8px;
+    background:#fff;
+    border:1px solid var(--camellia);
+    color:var(--camellia-dark);
+    padding:6px 12px;
+    font-size:12px;
+  }
+  .copybtn:hover{background:var(--camellia);color:#fff;}
+  .empty{font-size:13px;color:#9a9286;text-align:center;padding:30px 0;}
+  footer{margin-top:26px;font-size:12px;color:#9a9286;line-height:1.6;border-top:1px solid var(--line);padding-top:12px;}
+  .field.full{grid-column:1 / -1;}
+  .custominput{
+    width:100%;
+    margin-top:8px;
+    padding:8px 10px;
+    border:1px solid var(--line);
+    border-radius:6px;
+    font-size:13px;
+    background:#fffdf9;
+    color:var(--ink);
+  }
+  textarea#extra{
+    width:100%;
+    min-height:60px;
+    padding:8px 10px;
+    border:1px solid var(--line);
+    border-radius:6px;
+    font-size:13px;
+    background:#fffdf9;
+    color:var(--ink);
+    font-family:inherit;
+    resize:vertical;
+  }
+  .ptitle{font-size:12px;font-weight:600;color:#7a7268;margin:10px 0 4px;}
+  .ptitle:first-of-type{margin-top:0;}
+  .guide ul{margin:8px 0 0 18px;padding:0;}
+  .guide li{margin-bottom:4px;}
+  .header-row{display:flex;align-items:center;gap:14px;margin-bottom:4px;}
+  .avatar-frame{
+    width:64px;height:64px;border-radius:50%;
+    border:2px solid var(--camellia);
+    background:#fff;flex-shrink:0;
+    display:flex;align-items:center;justify-content:center;
+    overflow:hidden;
+  }
+  .creator-avatar{
+    width:44px;height:44px;border-radius:50%;
+    object-fit:cover;
+  }
+  .header-row h1{margin:0 0 2px;}
+  .header-row .sub{margin:0;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="header-row">
+    <div class="avatar-frame">
+    <img class="creator-avatar" alt="제작자 캐릭터" src="data:image/jpeg;base64,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" />
+    </div>
+    <div>
+      <h1>🌺 여순사건 그림 선택 대시보드</h1>
+      <p class="sub">내가 원하는 장면을 골라서 그림 설명을 만들어 봐요!</p>
+    </div>
+  </div>
+
+  <div class="guide">
+    🌸 1948년에 있었던 여순사건 이야기를 그림으로 표현해 보는 도구예요.<br/>
+    무섭거나 슬픈 장면 대신, 따뜻하고 부드러운 느낌으로 그려요.
+    <b>이렇게 사용해요</b>
+    <ul>
+      <li>장소, 보는 사람(시점), 동백꽃, 그림 느낌을 하나씩 골라요.</li>
+      <li>"선택안함"으로 두면 그 항목은 그림 설명에서 그냥 빠져요.</li>
+      <li>목록에 없는 내용은 "✏️ 직접입력"이나 "기타 내용"에 써도 돼요.</li>
+      <li>다 고르면 아래 버튼을 눌러요. 영어·한글 그림 설명이 함께 나와요!</li>
+    </ul>
+  </div>
+
+  <div class="grid">
+    <div class="field">
+      <label>🎨 수채화 질감</label>
+      <select id="watercolor">
+        <option value="">선택안함(생략)</option>
+        <option value="wash">맑은 투명 워시</option>
+        <option value="vivid">선명하고 따뜻한 발색</option>
+        <option value="pale">옅은 파스텔톤</option>
+        <option value="none">수채화 없음</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>✏️ 손그림 연필 스케치 선묘</label>
+      <select id="fineline">
+        <option value="">선택안함(생략)</option>
+        <option value="softpencil">부드러운 연필 스케치</option>
+        <option value="roughline">거친 손그림 선</option>
+        <option value="hatching">연필 해칭 질감</option>
+        <option value="none">선묘 없음</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>📍 장소</label>
+      <select id="place">
+        <option value="">선택안함(생략)</option>
+        <option value="school">학교</option>
+        <option value="alley">골목</option>
+        <option value="odongdo">오동도</option>
+        <option value="maraetunnel">마래터널</option>
+        <option value="maraemountain">마래산</option>
+        <option value="jonggosan">종고산</option>
+        <option value="custom">✏️ 직접입력</option>
+      </select>
+      <input type="text" id="placeCustom" class="custominput" placeholder="예: 시장 골목, 부둣가..." style="display:none;" />
+    </div>
+    <div class="field">
+      <label>👁 시점</label>
+      <select id="viewpoint">
+        <option value="">선택안함(생략)</option>
+        <option value="regiment14">14연대 군인 시점</option>
+        <option value="suppression">진압군 시점</option>
+        <option value="citizen">여수시민 시점</option>
+        <option value="animal">동물 시점</option>
+        <option value="building">건물 시점</option>
+        <option value="custom">✏️ 직접입력</option>
+      </select>
+      <input type="text" id="viewpointCustom" class="custominput" placeholder="예: 기자 시점, 우체부 시점..." style="display:none;" />
+    </div>
+    <div class="field">
+      <label>🌺 동백 모티프</label>
+      <select id="camellia">
+        <option value="">선택안함(동백 모티프 생략)</option>
+        <option value="bloom">동백꽃 만개 배경</option>
+        <option value="petals">동백 꽃잎 흩날림</option>
+        <option value="shade">동백나무 그늘</option>
+        <option value="none">동백 없음</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>🧑‍🎨 캐릭터 표현</label>
+      <select id="character">
+        <option value="">선택안함(생략)</option>
+        <option value="stylized">캐릭터화된 인물</option>
+        <option value="chibi">치비 스타일</option>
+        <option value="realistic">사실적 묘사(캐릭터화 안함)</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>💗 캐릭터 감정</label>
+      <select id="emotion">
+        <option value="">선택안함(생략)</option>
+        <option value="sadness">슬픔</option>
+        <option value="scared">무서움</option>
+        <option value="fear">두려움</option>
+        <option value="sorrowful">서러움</option>
+        <option value="longing">그리움</option>
+        <option value="relief">안도감</option>
+      </select>
+    </div>
+    <div class="field full">
+      <label>✏️ 기타 내용(자유 작성)</label>
+      <textarea id="extra" placeholder="추가로 넣고 싶은 설명을 자유롭게 적어주세요. (예: 비 오는 날, 노을빛, 태극기가 걸린 모습 등) 입력 내용은 영어·한글 프롬프트 끝에 그대로 덧붙습니다."></textarea>
+    </div>
+  </div>
+
+  <div class="btnrow">
+    <button class="primary" id="genOne">프롬프트 1개 생성</button>
+    <button class="secondary" id="genThree">3개 생성</button>
+    <button class="ghost" id="clearAll">결과 지우기</button>
+  </div>
+
+  <div id="results">
+    <div class="empty">위 옵션을 고르고 버튼을 눌러보세요. "선택안함"으로 둔 항목은 프롬프트에서 빠집니다.</div>
+  </div>
+
+  <footer>
+    💡 AI 팁: Midjourney에서는 프롬프트 끝부분 <code>--ar 4:3</code>가 그대로 적용되니 별도 수정 없이 붙여넣으면 됩니다. Leonardo.ai에서는 <code>--ar 4:3</code> 문구를 지우고 캔버스 비율을 4:3으로 직접 설정하세요.<br/>
+    본 도구는 교육 목적의 상징적 표현을 위해 설계되었으며, 실제 역사적 사실 확인은 별도 자료로 보완하시기 바랍니다. (확인 필요: 세부 역사적 디테일은 교사가 직접 검토)
+  </footer>
+</div>
+
+<script>
+  const DATA = {
+    place: [
+      { id: "school", ko: "학교", en: "a small countryside elementary school building with wooden window frames and an old flagpole in the schoolyard", koDesc: "시골의 작은 초등학교 건물, 나무로 된 창틀, 운동장에 오래된 국기게양대가 있는 풍경" },
+      { id: "alley", ko: "골목", en: "a narrow traditional Korean alley between low tiled-roof houses and stone walls", koDesc: "낮은 기와집들 사이로 이어진 좁은 전통 골목길, 돌담이 늘어선 모습" },
+      { id: "odongdo", ko: "오동도", en: "Odongdo Island's lighthouse and a coastal path lined with camellia trees, Yeosu shoreline in the background", koDesc: "오동도의 등대와 동백나무가 늘어선 해안 산책로, 뒤로 여수 해안선이 보이는 풍경" },
+      { id: "maraetunnel", ko: "마래터널", en: "the old Marae Tunnel entrance in Yeosu, a stone-arched tunnel mouth with mossy walls and a quiet, slightly mysterious atmosphere", koDesc: "여수 마래터널의 오래된 입구, 이끼 낀 돌 아치 모양 터널 입구와 차분하면서도 신비로운 분위기 (확인 필요: 세부 역사적 사실은 교사가 직접 검토)" },
+      { id: "maraemountain", ko: "마래산", en: "the green forested slopes of Maraesan mountain in Yeosu, winding mountain paths among pine trees, overlooking the town below", koDesc: "여수 마래산의 푸른 숲이 우거진 산비탈, 소나무 사이로 구불구불 이어진 산길과 아래로 보이는 마을 풍경" },
+      { id: "jonggosan", ko: "종고산", en: "the quiet wooded ridge of Jonggosan mountain in Yeosu, tall trees and a worn dirt path under a calm sky", koDesc: "여수 종고산의 조용한 숲길 능선, 키 큰 나무들과 차분한 하늘 아래 이어진 흙길 (확인 필요: 세부 역사적 사실은 교사가 직접 검토)" },
+    ],
+    viewpoint: [
+      { id: "regiment14", ko: "14연대 군인 시점", en: "seen through the eyes of a young 14th Regiment soldier, a conflicted expression, looking toward the town", koDesc: "어린 14연대 군인의 눈으로 바라본 장면, 갈등하는 표정으로 마을 쪽을 바라보는 모습" },
+      { id: "suppression", ko: "진압군 시점", en: "seen through the eyes of a government suppression-troop soldier entering the town, cautious posture", koDesc: "마을로 들어오는 진압군 병사의 눈으로 바라본 장면, 조심스러운 자세" },
+      { id: "citizen", ko: "여수시민 시점", en: "seen through the eyes of a Yeosu townsperson, a mother gently holding her child, watching quietly from a doorway", koDesc: "여수 마을 주민의 눈으로 바라본 장면, 아이를 다정히 안은 어머니가 문가에서 조용히 지켜보는 모습" },
+      { id: "animal", ko: "동물 시점", en: "seen from the viewpoint of a small sparrow perched on a branch, looking down calmly at the scene below", koDesc: "나뭇가지에 앉은 작은 참새의 시점에서, 아래 풍경을 차분히 내려다보는 모습" },
+      { id: "building", ko: "건물 시점", en: "seen from the viewpoint of the old building itself, its windows personified like quiet watching eyes over the yard", koDesc: "오래된 건물 자체의 시점, 마당을 조용히 지켜보는 듯 창문들이 눈처럼 표현된 모습" },
+    ],
+    camellia: [
+      { id: "bloom", ko: "동백꽃 만개 배경", en: "camellia trees in full bloom in the background, deep red blossoms scattered among green leaves", koDesc: "배경에 만개한 동백나무들, 초록 잎 사이로 흩어진 진한 붉은 꽃송이" },
+      { id: "petals", ko: "동백 꽃잎 흩날림", en: "red camellia petals gently falling and drifting across the scene", koDesc: "붉은 동백 꽃잎이 바람에 부드럽게 흩날리는 장면" },
+      { id: "shade", ko: "동백나무 그늘", en: "a single camellia tree quietly shading a corner of the foreground", koDesc: "전경 한쪽 구석을 조용히 그늘지게 하는 동백나무 한 그루" },
+      { id: "none", ko: "동백 없음", en: null, koDesc: null },
+    ],
+    character: [
+      { id: "stylized", ko: "캐릭터화된 인물", en: "figures drawn as gentle, simplified storybook characters, friendly and non-photorealistic, suitable for children", koDesc: "다정하고 단순화된 그림책 캐릭터 스타일로 표현된 인물, 사진처럼 사실적이지 않고 어린이에게 친근한 느낌" },
+      { id: "chibi", ko: "치비 스타일", en: "figures drawn in cute chibi style, oversized heads with small simplified bodies, big round eyes, soft rounded shapes, playful and adorable for children", koDesc: "귀여운 치비 스타일로 표현된 인물, 머리는 크고 몸은 작고 단순하게, 둥글고 큰 눈과 부드러운 형태로 어린이에게 친근하고 사랑스러운 느낌" },
+      { id: "realistic", ko: "사실적 묘사(캐릭터화 안함)", en: "figures drawn with soft realistic proportions, not stylized as cartoon characters", koDesc: "만화처럼 단순화하지 않고, 부드럽고 사실적인 비율로 표현된 인물" },
+    ],
+    emotion: [
+      { id: "sadness", ko: "슬픔", en: "a gently sad facial expression, downcast eyes and softly trembling lips, conveying sorrow in a tender, age-appropriate way", koDesc: "다정하게 슬픈 표정, 아래로 향한 눈과 살짝 떨리는 입술로 표현된 슬픔, 어린이에게 맞는 차분한 표현" },
+      { id: "scared", ko: "무서움", en: "a frightened facial expression with wide eyes and a slightly trembling posture, conveying fear in a gentle, non-graphic way suitable for children", koDesc: "놀라고 무서워하는 표정, 크게 뜬 눈과 살짝 움츠린 자세로 표현된 무서움, 자극적이지 않은 방식" },
+      { id: "fear", ko: "두려움", en: "an anxious apprehensive expression, shoulders slightly hunched, glancing cautiously over the shoulder, conveying quiet dread without graphic intensity", koDesc: "불안하고 조심스러운 표정, 살짝 움츠린 어깨와 뒤를 살피는 시선으로 표현된 조용한 두려움" },
+      { id: "sorrowful", ko: "서러움", en: "a sorrowful expression with welling tears and a quivering chin, conveying deep heartfelt sadness mixed with helplessness, in a tender way", koDesc: "눈물이 차오르고 턱이 떨리는 표정, 억울함과 슬픔이 섞인 서러운 마음을 다정하게 표현" },
+      { id: "longing", ko: "그리움", en: "a longing expression gazing into the distance, gentle wistful eyes, conveying quiet yearning for someone or somewhere missed", koDesc: "먼 곳을 바라보는 그리움 어린 표정, 아련한 눈빛으로 누군가 또는 어딘가를 그리워하는 마음" },
+      { id: "relief", ko: "안도감", en: "a relieved expression with softly relaxed shoulders and a faint gentle smile, conveying quiet relief and a sense of safety", koDesc: "부드럽게 풀어진 어깨와 옅은 미소로 표현된 안도감, 조용한 안심과 편안함의 느낌" },
+    ],
+    watercolor: [
+      { id: "wash", ko: "맑은 투명 워시", en: "clear transparent watercolor wash, softly bleeding edges between colors", koDesc: "맑고 투명한 수채화 워시, 색과 색 사이가 부드럽게 번지는 느낌" },
+      { id: "vivid", ko: "선명하고 따뜻한 발색", en: "vivid warm watercolor pigment with a visible paper-grain texture", koDesc: "선명하고 따뜻한 수채화 발색, 종이 질감이 살짝 드러나는 표현" },
+      { id: "pale", ko: "옅은 파스텔톤", en: "pale, calm pastel-toned watercolor with airy, light coloring and lots of negative space", koDesc: "옅고 차분한 파스텔톤 수채화, 가볍고 여백이 많은 채색" },
+      { id: "none", ko: "수채화 없음", en: null, koDesc: null },
+    ],
+    fineline: [
+      { id: "softpencil", ko: "부드러운 연필 스케치", en: "soft pencil sketch linework, gentle graphite shading with smooth rounded strokes and a hand-drawn warmth", koDesc: "부드러운 연필 스케치 선묘, 다정한 느낌의 연한 흑연 음영과 둥글둥글한 손그림 선" },
+      { id: "roughline", ko: "거친 손그림 선", en: "rough hand-drawn pencil lines with natural imperfection, slightly wobbly uneven strokes that feel authentically sketched, not digitally smoothed", koDesc: "자연스러운 불완전함이 느껴지는 거친 손그림 연필선, 살짝 흔들리고 고르지 않은 선으로 디지털처럼 매끈하지 않은 손맛 표현" },
+      { id: "hatching", ko: "연필 해칭 질감", en: "visible pencil hatching and cross-hatching texture, grainy graphite shading layered in short repeated strokes", koDesc: "연필 해칭·크로스해칭 질감이 드러나는 선묘, 짧은 선을 겹쳐 그린 거친 흑연 음영" },
+      { id: "none", ko: "선묘 없음", en: null, koDesc: null },
+    ],
+  };
+
+  const BASE_STYLE_EN = "bright and gentle illustration, warm and calm atmosphere appropriate for an elementary-school history picture book, 1948 Yeosu-Suncheon historical narrative scene, symbolic and non-graphic — no blood, no gore, no graphic violence, no visible weapons in close-up";
+  const BASE_STYLE_KO = "밝고 따뜻한 느낌의 삽화, 초등학생 대상 역사 그림책에 어울리는 차분하고 다정한 분위기, 1948년 여순사건을 다루는 역사적 장면, 상징적이고 비폭력적인 표현(피·잔혹한 묘사·폭력 장면·무기 클로즈업 없음)";
+  const COMPOSITION_EN = "composition: main subject or key point placed in the left third of the frame following rule-of-thirds, gentle negative space on the right --ar 4:3";
+  const COMPOSITION_KO = "구도: 인물이나 중요한 포인트를 화면 좌측 1/3 지점에 배치하는 3분할 구도, 우측에는 여백을 둠 (가로세로 비율 4:3)";
+
+  function resolveCustom(id, customText, fallbackKo){
+    const txt = (customText || "").trim();
+    if(!txt){
+      return { id: "custom", ko: `${fallbackKo}(미입력)`, koDesc: `직접 입력한 ${fallbackKo} 내용이 비어 있음`, en: `a custom ${fallbackKo} (not specified)` };
+    }
+    return { id: "custom", ko: `직접입력: ${txt}`, koDesc: txt, en: txt };
+  }
+
+  // "선택안함"(빈 값)은 더 이상 랜덤으로 채우지 않고, 해당 항목을 프롬프트에서 그냥 생략한다.
+  function buildPrompt(sel){
+    const watercolor = sel.watercolor ? DATA.watercolor.find(w => w.id === sel.watercolor) : null;
+    const fineline = sel.fineline ? DATA.fineline.find(f => f.id === sel.fineline) : null;
+    const place = sel.place === "custom" ? resolveCustom(sel.place, sel.placeCustom, "장소")
+      : sel.place ? DATA.place.find(p => p.id === sel.place) : null;
+    const viewpoint = sel.viewpoint === "custom" ? resolveCustom(sel.viewpoint, sel.viewpointCustom, "시점")
+      : sel.viewpoint ? DATA.viewpoint.find(v => v.id === sel.viewpoint) : null;
+    const camellia = sel.camellia ? DATA.camellia.find(c => c.id === sel.camellia) : null;
+    const character = sel.character ? DATA.character.find(c => c.id === sel.character) : null;
+    const emotion = sel.emotion ? DATA.emotion.find(e => e.id === sel.emotion) : null;
+
+    const extra = (sel.extra || "").trim();
+
+    const partsEn = [BASE_STYLE_EN, watercolor && watercolor.en, fineline && fineline.en, place && place.en, viewpoint && viewpoint.en, camellia && camellia.en, character && character.en, emotion && emotion.en, COMPOSITION_EN];
+    if(extra) partsEn.push(extra);
+    const promptEn = partsEn.filter(Boolean).join(", ");
+
+    const partsKo = [BASE_STYLE_KO, watercolor && watercolor.koDesc, fineline && fineline.koDesc, place && place.koDesc, viewpoint && viewpoint.koDesc, camellia && camellia.koDesc, character && character.koDesc, emotion && emotion.koDesc, COMPOSITION_KO];
+    if(extra) partsKo.push(extra);
+    const promptKo = partsKo.filter(Boolean).join(", ");
+
+    const noteParts = [
+      watercolor ? `[수채화] ${watercolor.ko}` : null,
+      fineline ? `[선묘] ${fineline.ko}` : null,
+      place ? `[장소] ${place.ko}` : null,
+      viewpoint ? `[시점] ${viewpoint.ko}` : null,
+      camellia ? `[동백] ${camellia.ko}` : null,
+      character ? `[캐릭터] ${character.ko}` : null,
+      emotion ? `[감정] ${emotion.ko}` : null,
+    ].filter(Boolean);
+    const noteKo = noteParts.length ? noteParts.join(" / ") : "선택한 항목 없음(기본 스타일만 적용)";
+
+    return { promptEn, promptKo, noteKo };
+  }
+
+  function currentSelection(){
+    return {
+      watercolor: document.getElementById("watercolor").value || null,
+      fineline: document.getElementById("fineline").value || null,
+      place: document.getElementById("place").value || null,
+      placeCustom: document.getElementById("placeCustom").value || "",
+      viewpoint: document.getElementById("viewpoint").value || null,
+      viewpointCustom: document.getElementById("viewpointCustom").value || "",
+      camellia: document.getElementById("camellia").value || null,
+      character: document.getElementById("character").value || null,
+      emotion: document.getElementById("emotion").value || null,
+      extra: document.getElementById("extra").value || "",
+    };
+  }
+
+  function toggleCustomInput(selectId, inputId){
+    const select = document.getElementById(selectId);
+    const input = document.getElementById(inputId);
+    input.style.display = select.value === "custom" ? "block" : "none";
+  }
+  document.getElementById("place").addEventListener("change", () => toggleCustomInput("place", "placeCustom"));
+  document.getElementById("viewpoint").addEventListener("change", () => toggleCustomInput("viewpoint", "viewpointCustom"));
+
+  function renderCard(result, idx){
+    const card = document.createElement("div");
+    card.className = "card";
+    const uid = `${Date.now()}-${idx}`;
+    const enId = `prompt-en-${uid}`;
+    const koId = `prompt-ko-${uid}`;
+    card.innerHTML = `
+      <span class="tag">조합 ${idx + 1}</span>
+      <div class="note">${result.noteKo}</div>
+      <div class="ptitle">🇺🇸 영어 프롬프트 (Midjourney·Leonardo.ai용)</div>
+      <textarea id="${enId}" readonly>${result.promptEn}</textarea>
+      <button class="copybtn" data-target="${enId}">📋 영어 복사</button>
+      <div class="ptitle">🇰🇷 한글 프롬프트(참고·이해용)</div>
+      <textarea id="${koId}" readonly>${result.promptKo}</textarea>
+      <button class="copybtn" data-target="${koId}">📋 한글 복사</button>
+    `;
+    return card;
+  }
+
+  function appendResults(results){
+    const box = document.getElementById("results");
+    box.querySelectorAll(".empty").forEach(e => e.remove());
+    results.forEach((r, i) => box.prepend(renderCard(r, i)));
+  }
+
+  document.getElementById("genOne").addEventListener("click", () => {
+    const sel = currentSelection();
+    const result = buildPrompt(sel);
+    appendResults([result]);
+  });
+
+  document.getElementById("genThree").addEventListener("click", () => {
+    const sel = currentSelection();
+    const results = [0,1,2].map(() => buildPrompt(sel));
+    appendResults(results);
+  });
+
+  document.getElementById("clearAll").addEventListener("click", () => {
+    const box = document.getElementById("results");
+    box.innerHTML = '<div class="empty">위 옵션을 고르고 버튼을 눌러보세요. "선택안함"으로 둔 항목은 프롬프트에서 빠집니다.</div>';
+  });
+
+  document.getElementById("results").addEventListener("click", (e) => {
+    if(e.target.classList.contains("copybtn")){
+      const ta = document.getElementById(e.target.dataset.target);
+      ta.select();
+      document.execCommand("copy");
+      const original = e.target.dataset.label || e.target.textContent;
+      e.target.dataset.label = original;
+      e.target.textContent = "✅ 복사됨";
+      se
