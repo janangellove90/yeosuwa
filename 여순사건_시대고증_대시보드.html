@@ -129,7 +129,7 @@
     background:#fffdf9;
     color:var(--ink);
   }
-  textarea#situation, textarea#extra{
+  textarea#mytext, textarea#situation, textarea#extra{
     width:100%;
     min-height:60px;
     padding:8px 10px;
@@ -140,6 +140,11 @@
     color:var(--ink);
     font-family:inherit;
     resize:vertical;
+  }
+  textarea#mytext{
+    min-height:100px;
+    border:2px solid var(--camellia);
+    background:#fff5f5;
   }
   .ptitle{font-size:12px;font-weight:600;color:#7a7268;margin:10px 0 4px;}
   .ptitle:first-of-type{margin-top:0;}
@@ -274,6 +279,10 @@
         <option value="custom">✏️ 직접입력</option>
       </select>
       <input type="text" id="emotionCustom" class="custominput" placeholder="예: 담담함, 다짐 등" style="display:none;" />
+    </div>
+    <div class="field full">
+      <label>✍️ 내 글 (이미지로 만들 글)</label>
+      <textarea id="mytext" placeholder="그림으로 만들고 싶은 내 글을 여기에 붙여넣거나 직접 써주세요. (예: 총소리가 들리자 아이는 엄마 손을 꽉 쥐었다. 하늘에는 연기가 피어올랐다.) 글의 장면이 이미지 프롬프트에 그대로 반영됩니다."></textarea>
     </div>
     <div class="field full">
       <label>📖 상황 설명</label>
@@ -614,6 +623,7 @@
       : sel.character ? DATA.character.find(c => c.id === sel.character) : null;
     const emotion = sel.emotion === "custom" ? resolveCustom(sel.emotionCustom, "감정")
       : sel.emotion ? DATA.emotion.find(e => e.id === sel.emotion) : null;
+    const mytext = (sel.mytext || "").trim();
     const extra = (sel.extra || "").trim();
     const situation = (sel.situation || "").trim();
 
@@ -645,6 +655,7 @@
       vBible && vBible.en,
       character && character.en,
       emotion && emotion.en,
+      mytext ? `directly visualize this written scene: "${mytext}"` : null,
       situation || null,
       THEME_EN,
       extra,
@@ -664,6 +675,7 @@
       vBible && vBible.ko,
       character && character.ko,
       emotion && emotion.ko,
+      mytext ? `[내 글 반영] ${mytext}` : null,
       situation ? `[상황] ${situation}` : null,
       THEME_KO,
       extra,
@@ -703,6 +715,7 @@
       characterCustom: document.getElementById("characterCustom").value,
       emotion: document.getElementById("emotion").value,
       emotionCustom: document.getElementById("emotionCustom").value,
+      mytext: document.getElementById("mytext").value,
       situation: document.getElementById("situation").value,
       extra: document.getElementById("extra").value,
     };
