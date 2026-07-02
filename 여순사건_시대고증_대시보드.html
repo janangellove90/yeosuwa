@@ -155,12 +155,6 @@
   }
   .btn-gemini:hover{background:#1558b0;}
   .autotag{font-size:11px;color:var(--leaf);margin-top:4px;display:none;}
-  .refbox{margin-top:8px;border:1px dashed var(--line);border-radius:8px;padding:8px;background:#fffdf9;}
-  .refbox .refempty{font-size:11px;color:#9a9286;line-height:1.5;}
-  .refgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;}
-  .refitem{font-size:10px;color:#7a7268;text-align:center;}
-  .refitem img{width:100%;aspect-ratio:1/1;object-fit:cover;border-radius:6px;border:1px solid var(--line);display:block;margin-bottom:2px;}
-  .refitem .refsrc{display:block;color:#b0a89c;}
   .header-row{display:flex;align-items:center;gap:14px;margin-bottom:4px;}
   .avatar-frame{
     width:64px;height:64px;border-radius:50%;
@@ -222,7 +216,6 @@
         <option value="custom">기타장소(직접입력)</option>
       </select>
       <input type="text" id="placeCustom" class="custominput" placeholder="예: 시장 골목, 부둣가..." style="display:none;" />
-      <div class="refbox" id="placeRefBox"></div>
     </div>
     <div class="field">
       <label>🎨 수채화 질감</label>
@@ -244,19 +237,18 @@
       </select>
     </div>
     <div class="field">
-      <label>👁 시점</label>
+      <label>👁 이 이야기를 누구의 눈으로 보고 있나요?</label>
       <select id="viewpoint">
         <option value="">선택안함(생략)</option>
-        <option value="regiment14">14연대 군인 시점</option>
-        <option value="suppression">진압군 시점(군복·장비 디테일 자동 반영)</option>
-        <option value="citizen">여수시민 시점</option>
-        <option value="animal">동물 시점</option>
-        <option value="building">건물 시점</option>
+        <option value="regiment14">여수 군인의 눈으로</option>
+        <option value="suppression">나라 군인의 눈으로</option>
+        <option value="citizen">마을 사람의 눈으로</option>
+        <option value="animal">동물의 눈으로</option>
+        <option value="building">건물의 눈으로</option>
         <option value="custom">✏️ 직접입력</option>
       </select>
       <input type="text" id="viewpointCustom" class="custominput" placeholder="예: 기자 시점, 우체부 시점..." style="display:none;" />
       <div class="autotag" id="viewpointAutoTag">→ 캐릭터표현·감정 자동 채움 (아래에서 직접 바꿀 수 있어요)</div>
-      <div class="refbox" id="viewpointRefBox"></div>
     </div>
     <div class="field">
       <label>🧑‍🎨 캐릭터 표현</label>
@@ -330,11 +322,11 @@
       { id: "maraetunnel", ko: "마래터널(확인 필요: 세부 형태는 교사 검토)", en: "the old Marae Tunnel entrance in Yeosu, a stone-arched tunnel mouth with mossy walls" },
     ],
     viewpoint: [
-      { id: "regiment14", ko: "14연대 군인 시점", en: "seen through the eyes of a young 14th Regiment soldier" },
-      { id: "suppression", ko: "진압군 시점", en: "seen through the eyes of a government suppression-troop soldier entering the town" },
-      { id: "citizen", ko: "여수시민 시점", en: "seen through the eyes of a Yeosu townsperson" },
-      { id: "animal", ko: "동물 시점", en: "seen from the viewpoint of a small sparrow perched on a branch" },
-      { id: "building", ko: "건물 시점", en: "seen from the viewpoint of the old building itself" },
+      { id: "regiment14", ko: "여수 군인의 눈으로", en: "seen through the eyes of a young 14th Regiment soldier" },
+      { id: "suppression", ko: "나라 군인의 눈으로", en: "seen through the eyes of a government suppression-troop soldier entering the town" },
+      { id: "citizen", ko: "마을 사람의 눈으로", en: "seen through the eyes of a Yeosu townsperson" },
+      { id: "animal", ko: "동물의 눈으로", en: "seen from the viewpoint of a small sparrow perched on a branch" },
+      { id: "building", ko: "건물의 눈으로", en: "seen from the viewpoint of the old building itself" },
     ],
     character: [
       { id: "stylized", ko: "캐릭터화된 인물", en: "gentle, simplified storybook characters" },
@@ -402,33 +394,6 @@
     ],
     animal: [], building: [],
   };
-  // 시기(1948년/2026년)에 따라 참고 사진을 구분해서 보여준다.
-  // phase1·phase2 = 1948년 / present2026 = 2026년. 시기를 아직 안 골랐거나 직접입력이면 사진을 보여주지 않는다.
-  function periodToYear(periodId){
-    if(periodId === "phase1" || periodId === "phase2") return "1948";
-    if(periodId === "present2026") return "2026";
-    return null;
-  }
-  function renderRefBox(boxId, key, periodId){
-    const box = document.getElementById(boxId);
-    if(!box) return;
-    if(!key){
-      box.innerHTML = "";
-      return;
-    }
-    const periodYear = periodToYear(periodId);
-    const allItems = REF_IMAGES[key] || [];
-    const items = periodYear ? allItems.filter(it => it.period === periodYear) : [];
-    if(items.length === 0){
-      box.innerHTML = periodYear
-        ? `<div class="refempty">🖼 ${periodYear}년 참고 사진 준비 중(확인 필요) — 선생님이 사진을 보내주시면 여기에 추가할게요.</div>`
-        : `<div class="refempty">🖼 시기를 먼저 선택하면 참고 사진이 나와요.</div>`;
-      return;
-    }
-    box.innerHTML = `<div class="refgrid">${items.map(it => `
-      <div class="refitem"><img src="${it.src}" alt="${it.caption || ""}" />${it.caption || ""}<span class="refsrc">${it.source || ""}</span></div>
-    `).join("")}</div>`;
-  }
 
   // 2026 업데이트: 사용자 확정 기본 화풍 — 세밀한 잉크 선 + 수채화 워시, 따뜻한 황금빛 톤, 큰 눈·둥근 얼굴의 동화적 동심 캐릭터(특히 어린 인물이 장면을 바라보는 구도)가 반복되는 레퍼런스 3장(부대 사열, 마래터널, 진남관 앞 군중)을 기준으로 고정
   const BASE_STYLE_EN = "finely detailed ink-and-watercolor children's picture-book illustration, soft warm golden-hour color palette (amber, ochre, muted gold and gentle blue), delicate visible brushstrokes and fine linework, characters drawn in a gentle storybook style with slightly large heads and soft rounded features, warm and calm atmosphere appropriate for an elementary-school history picture book, 1948 Yeosu-Suncheon historical narrative scene, symbolic and non-graphic — no blood, no gore, no graphic violence, no visible weapons in close-up";
@@ -831,12 +796,8 @@
   setupCustomToggle("character", "characterCustom");
   setupCustomToggle("emotion", "emotionCustom");
 
-  // 장소 선택 시 참고 사진 갱신(현재 선택된 시기 기준)
-  document.getElementById("place").addEventListener("change", (e) => {
-    renderRefBox("placeRefBox", e.target.value, document.getElementById("period").value);
-  });
 
-  // 시점 선택 시 캐릭터표현·감정 자동 채움 + 참고 사진 갱신(현재 선택된 시기 기준)
+  // 시점 선택 시 캐릭터표현·감정 자동 채움
   document.getElementById("viewpoint").addEventListener("change", (e) => {
     const auto = VIEW_AUTO[e.target.value];
     const autoTag = document.getElementById("viewpointAutoTag");
@@ -847,15 +808,8 @@
     } else {
       autoTag.style.display = "none";
     }
-    renderRefBox("viewpointRefBox", e.target.value, document.getElementById("period").value);
   });
 
-  // 시기 선택이 바뀌면 이미 골라둔 장소·시점 참고 사진도 그 시기 기준으로 다시 갱신
-  document.getElementById("period").addEventListener("change", (e) => {
-    const periodId = e.target.value;
-    renderRefBox("placeRefBox", document.getElementById("place").value, periodId);
-    renderRefBox("viewpointRefBox", document.getElementById("viewpoint").value, periodId);
-  });
 </script>
 </body>
 </html>
